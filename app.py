@@ -1,6 +1,7 @@
 import sqlite3 as sq
 from flask import *
 app=Flask(__name__)
+app.secret_key="india@11"
 
 @app.route("/")
 def home():
@@ -14,9 +15,9 @@ def about():
 def reg():
    return render_template("reg.html")
 
-@app.route("/login")
-def login():
-    return render_template("login.html")
+# @app.route("/login")
+# def login():
+#     return render_template("login.html")
 
 @app.route("/gallary")
 def gallary():
@@ -92,6 +93,67 @@ def profilesave():
         return redirect(url_for("viewdata"))
     else:
         return "Something went wrong"
+
+
+@app.route("/login") 
+def login():
+    return render_template("login.html")
+
+@app.route("/logincheck",methods=["GET","POST"])
+def logincheck():
+    if request.method=="POST":
+        em=request.form["email"]
+        ps=request.form["password"]
+
+        con=sq.connect("flask.db")
+        cur=con.cursor()
+        cur.execute("select * from register where email=? and password=?",[em,ps])
+        data=cur.fetchall()
+
+        if data:
+            session["username"]=em              #session start
+            # return redirect(url_for("dashboard"))
+            return "<script>window.alert('Login Successfully');window.location.href='/dashboard';</script>"
+        
+        else:
+            # return redirect(url_for("login"))
+            return "<script>window.alert('Login Failed');window.location.href='/login';</script>"
+
+    else:
+        return "Error"
+
+@app.route("/dashboard")
+def dashboard():
+    if session.get("username") is not None:
+        un=session.get("username")
+
+        con=sq.connect("flask.db")
+        cur=con.cursor()
+        cur.execute("select * from register where email=?",[un])
+        data=cur.fetchone()
+        return render_template("dashboard.html",data=data)
+    else:
+        return redirect(url_for("login"))
+
+@app.route("/logout")
+def logout():
+    session.pop('username',None)   #session end
+    return redirect(url_for("login"))
+
+@app.route("/upload_form")
+def file():
+    return render_template("upload_form.html")
+
+@app.route("/fileupload",methods=["GET","POST"])
+def fileupload():
+    if request.method=="POST":
+        sn=request.files["sign"]
+
+        sn.save(sn.filename)
+
+        return "uploaded Successfully"
+    else:
+        return "Failed"
 
 
 
